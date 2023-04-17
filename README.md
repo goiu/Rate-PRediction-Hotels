@@ -1,1 +1,1 @@
-# Rate-PRediction-Hotels
+# Rate-Prediction-Hotels
