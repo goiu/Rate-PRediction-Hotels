@@ -34,6 +34,9 @@ class Model(tf.keras.Model):
         #Type error
         # self.LSTM = tf.keras.layers.LSTM((MAX_WORDS*128, self.linear_size_one))
         self.LSTM = tf.keras.layers.LSTM(self.linear_size_one, return_sequences=True)
+        #For GRU Model
+        # self.GRU = tf.keras.layers.GRU(self.linear_size_one, return_sequences=True)
+
         self.l1 = tf.keras.layers.Dense(self.linear_size_two, activation='relu')
         #Pass in the number of output classes
         self.l2 = tf.keras.layers.Dense(classification, activation='softmax')
@@ -50,6 +53,8 @@ class Model(tf.keras.Model):
 
         #Pass inputs through LSTM
         l2_out = self.LSTM(l1_out)
+        #For GRU Model
+        # l2_out = self.GRU(l1_out)
 
         l2_out = tf.reshape(l2_out, (self.batch_size, -1))
         
@@ -210,11 +215,11 @@ def main():
 
     #Instantiate the model
     #Change classification to be number of classes you want model to differentiate between
-    model = Model(classification=2)
+    model = Model(classification=5)
 
     #Get the train and test inputs and labels from preprocess
     #Preprocesses labels depending on what type of classification: binary/multi-class
-    train_inputs, test_inputs, train_labels, test_labels = preprocess(classification=2)
+    train_inputs, test_inputs, train_labels, test_labels = preprocess(classification=5)
 
     #Train the model
 
