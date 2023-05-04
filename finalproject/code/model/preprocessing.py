@@ -29,7 +29,7 @@ nltk.download('omw-1.4')
 
 def get_labels_data():
     #Read from the csv file to create a pandas dataframe
-    data = pd.read_csv('/Users/justenjoffe/Downloads/yip-yap-yelp-main/code/data/yelp_reviews_Hotels_categories.csv')
+    data = pd.read_csv('finalproject/code/data/yelp_reviews_Hotels_categories.csv')
 
     #get the labels - corresponds to number of stars 
     labels = data['review_stars'].values
@@ -114,7 +114,7 @@ def process_text(reviews):
     
     return padded_reviews
 
-def preprocess(classification=2):
+def preprocess(classification=5):
 
     labels, reviews = get_labels_data()
 

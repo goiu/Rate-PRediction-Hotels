@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 GPU = False
 MAX_WORDS = 50
 #Depends on which classification (2, 3 or 5)
-NUMBER_OF_CLASSES = 3
+NUMBER_OF_CLASSES = 2
 #Set large vocab size for embedding matrix
 VOCAB_SIZE = 500000
 EPOCHS = 50
@@ -33,17 +33,12 @@ class Model(tf.keras.Model):
         #Define layers
         #Type error
         # self.LSTM = tf.keras.layers.LSTM((MAX_WORDS*128, self.linear_size_one))
-        self.LSTM = tf.keras.layers.LSTM(self.linear_size_one)
-        self.l1 = tf.keras.layers.Dense(self.linear_size_one, self.linear_size_two)
-        self.relu = tf.keras.layers.ReLU()
-
+        self.LSTM = tf.keras.layers.LSTM(self.linear_size_one, return_sequences=True)
+        self.l1 = tf.keras.layers.Dense(self.linear_size_two, activation='relu')
         #Pass in the number of output classes
-        self.l2 = tf.keras.layers.Dense(self.linear_size_two, classification)
+        self.l2 = tf.keras.layers.Dense(classification, activation='softmax')
 
-        #Sigmoid for binary, softmax for multi-class
-        self.softmax = tf.keras.layers.Softmax()
-        self.sigm = tf.keras.activations.sigmoid()
-
+        # self.sigm = tf.keras.activations.sigmoid()
         self.optimizer = tf.keras.optimizers.Adam()
         #Loss list for plotting the losses
         self.loss_list = []
@@ -51,45 +46,46 @@ class Model(tf.keras.Model):
     def call(self, reviews):
         #The shape of the self.embedding output will be [sentence_length, batch_size, embedding_dim]
         l1_out = self.embedding(reviews)
-        l1_out = tf.reshape(l1_out, (self.batch_size, MAX_WORDS*128))
+        # l1_out = tf.reshape(l1_out, (self.batch_size, MAX_WORDS**128))
 
         #Pass inputs through LSTM
-        l2_out, hidden_state = self.LSTM(l1_out)
+        l2_out = self.LSTM(l1_out)
+
+        l2_out = tf.reshape(l2_out, (self.batch_size, -1))
         
         #Pass through dense layers
         l3_out = self.l1(l2_out)
        
-        l4_out = self.relu(l3_out)
        
-        l5_out = self.l2(l4_out) 
+        final_out = self.l2(l3_out) 
 
         #Use softmax to get probability distribution 
-        final_out = self.softmax(l5_out)
+        # final_out = self.softmax(l5_out)
 
+        # print(final_out)
         
         return final_out
 
     def loss(self, labels, predictions):
 
         #Convert labels to tensor
-        labels = tf.Variable(labels)
-        loss = tf.keras.losses.CategoricalCrossentropy()
-        output = loss(predictions, labels)
+        loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
+        output = loss(labels, predictions)
         return output
 
 
-    def accuracy(self, labels, predictions):
+    def accuracy(self, predictions, labels):
         
         correct_count = 0
         count = 0
         #Run through each input in batch
         for i in range(len(predictions)):
             #Helps to indicate which predictions are correct/shows what the model learned for that input
-            print(predictions[i])
-            print(labels[i])
-            print(tf.argmax(predictions[i]).item())
+            # print(predictions[i])
+            # print(labels[i])
+            # print(tf.argmax(predictions[i]).numpy())
             #Returns the indices of the maximum value thus if correctly predicted increments counter
-            if tf.argmax(predictions[i]).item() == labels[i]:
+            if tf.argmax(predictions[i]).numpy() == labels[i]:
                 correct_count += 1
             count += 1
         
@@ -171,11 +167,12 @@ def test(model, test_inputs, test_labels):
     for batch in range(num_batches):
         low = model.batch_size * batch
         high =  np.multiply(model.batch_size, batch) + model.batch_size
-        logit = model.call(test_inputs[low:high], True)
+        logit = model.call(test_inputs[low:high])
         accuracy = model.accuracy(logit, test_labels[low:high])
         test_accuracy.append(accuracy)
     return_me = np.average(test_accuracy)
     return return_me
+
 def train(model, inputs, labels):
     tl = 0 
     for i in range(int(len(inputs)/model.batch_size)):
@@ -223,11 +220,12 @@ def main():
 
     
     #Get the accuracy from testing
-    for x in range(3):
-        train(model, train_inputs, train_labels)
-    accuracy = test(test_inputs, test_labels)
-    visualize_loss(model.loss_list)
+
+    train(model, train_inputs, train_labels)
+    accuracy = test(model, test_inputs, test_labels)
     print("accuracy", accuracy)
+    visualize_loss(model.loss_list)
+    
      
 if __name__ == "__main__":
     main()
