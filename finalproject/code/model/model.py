@@ -31,8 +31,6 @@ class Model(tf.keras.Model):
         self.embedding = tf.keras.layers.Embedding(VOCAB_SIZE, 128)
         
         #Define layers
-        #Type error
-        # self.LSTM = tf.keras.layers.LSTM((MAX_WORDS*128, self.linear_size_one))
         self.LSTM = tf.keras.layers.LSTM(self.linear_size_one, return_sequences=True)
         #For GRU Model
         # self.GRU = tf.keras.layers.GRU(self.linear_size_one, return_sequences=True)
@@ -41,7 +39,6 @@ class Model(tf.keras.Model):
         #Pass in the number of output classes
         self.l2 = tf.keras.layers.Dense(classification, activation='softmax')
 
-        # self.sigm = tf.keras.activations.sigmoid()
         self.optimizer = tf.keras.optimizers.Adam()
         #Loss list for plotting the losses
         self.loss_list = []
@@ -49,7 +46,6 @@ class Model(tf.keras.Model):
     def call(self, reviews):
         #The shape of the self.embedding output will be [sentence_length, batch_size, embedding_dim]
         l1_out = self.embedding(reviews)
-        # l1_out = tf.reshape(l1_out, (self.batch_size, MAX_WORDS**128))
 
         #Pass inputs through LSTM
         l2_out = self.LSTM(l1_out)
@@ -63,11 +59,6 @@ class Model(tf.keras.Model):
        
        
         final_out = self.l2(l3_out) 
-
-        #Use softmax to get probability distribution 
-        # final_out = self.softmax(l5_out)
-
-        # print(final_out)
         
         return final_out
 
@@ -85,10 +76,6 @@ class Model(tf.keras.Model):
         count = 0
         #Run through each input in batch
         for i in range(len(predictions)):
-            #Helps to indicate which predictions are correct/shows what the model learned for that input
-            # print(predictions[i])
-            # print(labels[i])
-            # print(tf.argmax(predictions[i]).numpy())
             #Returns the indices of the maximum value thus if correctly predicted increments counter
             if tf.argmax(predictions[i]).numpy() == labels[i]:
                 correct_count += 1
@@ -96,64 +83,6 @@ class Model(tf.keras.Model):
         
         #Return the correct predictions over total to give accuracy for that batch
         return correct_count/count
-
-
-    def train_torch(self, inputs, labels):
-        #Define optimizer to use in backpropogation
-        optimizer = tf.optimizers.Adam(learning_rate=0.005)
-        for i in range(int(len(inputs)/self.batch_size)):
-            print("Training batch: ", i)
-
-            #Get the next batch of inputs and labels
-            input_batch = inputs[i*self.batch_size: i*self.batch_size + self.batch_size]
-            labels_batch = labels[i*self.batch_size: i*self.batch_size + self.batch_size]
-   
-            #Convert inputs to tensor
-            input_batch = torch.tensor(input_batch)
-           
-            #Run forward pass
-            probabilites = self.call(input_batch)
-
-            #Calculate the loss
-            loss = self.loss(labels_batch, probabilites)
-            print("Loss from batch: ", i, "i", loss)
-            self.loss_list.append(loss.item())
-            
-            #Update model parameters
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-        return 
-    
-
-
-    
-    # def test_torch(self, inputs, labels):
-    #     accuracy_list = []
-
-    #     for i in range(int(len(inputs)/self.batch_size)):
-    #         print("Testing batch: ", i)
-
-    #         #Get next batch of inputs and labels
-    #         input_batch = inputs[i*self.batch_size: i*self.batch_size + self.batch_size]
-    #         labels_batch = labels[i*self.batch_size: i*self.batch_size + self.batch_size]
-
-    #         #Convert inputs to tensor to run through model
-    #         input_batch = torch.tensor(input_batch)
-
-    #         #Get the probability distribution for the batch
-    #         probabilites = self.call(input_batch)
-
-    #         #Calculate the accuracy
-    #         accuracy = self.accuracy(labels_batch, probabilites)
-    #         print("batch accuracy: ", accuracy)
-            
-    #         #Append accuracy to list
-    #         accuracy_list.append(accuracy)
-        
-    #     #Return the average accuracy across all batches
-    #     return np.average(accuracy_list)
 
 def test(model, test_inputs, test_labels):
     """
@@ -179,7 +108,6 @@ def test(model, test_inputs, test_labels):
     return return_me
 
 def train(model, inputs, labels):
-    tl = 0 
     for i in range(int(len(inputs)/model.batch_size)):
         print("Training batch: ", i)
         input_batch = inputs[i*model.batch_size: i*model.batch_size + model.batch_size]
@@ -213,18 +141,12 @@ def main():
     
     print("called main")
 
-    #Instantiate the model
-    #Change classification to be number of classes you want model to differentiate between
+    #Change classification
     model = Model(classification=5)
 
     #Get the train and test inputs and labels from preprocess
-    #Preprocesses labels depending on what type of classification: binary/multi-class
+    #Pick classification
     train_inputs, test_inputs, train_labels, test_labels = preprocess(classification=5)
-
-    #Train the model
-
-    
-    #Get the accuracy from testing
 
     train(model, train_inputs, train_labels)
     accuracy = test(model, test_inputs, test_labels)
