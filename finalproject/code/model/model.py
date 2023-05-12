@@ -1,39 +1,29 @@
 import numpy as np
 import pandas as pd
 import torch
-# from tensorflow import 
 import tensorflow as tf
-# from tensorflow import LSTM, Linear, Dropout, MaxPool1d, GRU, Conv1d, Embedding, Sequential, ReLU, Softmax, Sigmoid
 from preprocessing import preprocess
 from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
 
 
-#constants
-GPU = False
-MAX_WORDS = 50
-#Depends on which classification (2, 3 or 5)
-NUMBER_OF_CLASSES = 2
-#Set large vocab size for embedding matrix
-VOCAB_SIZE = 500000
-EPOCHS = 50
-BATCH_SIZE = 100
-
 class Model(tf.keras.Model):
-    def __init__(self, classification):
+    def __init__(self, classification, is_lstm):
         super(Model, self).__init__()
         #Define batch size
-        self.batch_size = 100
-        self.linear_size_one = 300 
-        self.linear_size_two = 100 
+        self.batch_size = 84
+        self.linear_size_one = 256 
+        self.linear_size_two = 84 
         
         #Define embedding matrix
-        self.embedding = tf.keras.layers.Embedding(VOCAB_SIZE, 128)
+        self.embedding = tf.keras.layers.Embedding(450000, 128)
         
         #Define layers
-        self.LSTM = tf.keras.layers.LSTM(self.linear_size_one, return_sequences=True)
+        if is_lstm:
+            self.model_layer = tf.keras.layers.LSTM(self.linear_size_one, return_sequences=True)
+        else:
         #For GRU Model
-        # self.GRU = tf.keras.layers.GRU(self.linear_size_one, return_sequences=True)
+            self.model_layer = tf.keras.layers.GRU(self.linear_size_one, return_sequences=True)
 
         self.l1 = tf.keras.layers.Dense(self.linear_size_two, activation='relu')
         #Pass in the number of output classes
@@ -47,10 +37,8 @@ class Model(tf.keras.Model):
         #The shape of the self.embedding output will be [sentence_length, batch_size, embedding_dim]
         l1_out = self.embedding(reviews)
 
-        #Pass inputs through LSTM
-        l2_out = self.LSTM(l1_out)
-        #For GRU Model
-        # l2_out = self.GRU(l1_out)
+        #Pass inputs through LSTM or GRU
+        l2_out = self.model_layer(l1_out)
 
         l2_out = tf.reshape(l2_out, (self.batch_size, -1))
         
@@ -141,8 +129,8 @@ def main():
     
     print("called main")
 
-    #Change classification
-    model = Model(classification=5)
+    #Change classification and model
+    model = Model(classification=5, is_lstm=False)
 
     #Get the train and test inputs and labels from preprocess
     #Pick classification
